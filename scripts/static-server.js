@@ -1,7 +1,6 @@
-import http from "http";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
 
 const PORT = process.env.PORT || 8080;
 const ROOT = process.cwd(); // /app
@@ -50,8 +49,10 @@ server.listen(PORT, "0.0.0.0", () => {
 });
 
 // 🔥 reload trigger
-export function triggerReload() {
+function triggerReload() {
   for (const res of clients) {
     res.write("data: reload\n\n");
   }
 }
+
+module.exports = { triggerReload };

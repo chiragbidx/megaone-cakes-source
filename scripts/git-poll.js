@@ -1,5 +1,5 @@
-import { exec } from "child_process";
-import { triggerReload } from "./static-server.js";
+const { exec } = require("child_process");
+const { triggerReload } = require("./static-server.js");
 
 process.chdir("/app"); // 🔑 FORCE correct git root
 
@@ -15,7 +15,7 @@ function run(cmd) {
   });
 }
 
-export async function startGitPoll() {
+async function startGitPoll() {
   console.log("[git-poll] started");
 
   async function poll() {
@@ -38,3 +38,5 @@ export async function startGitPoll() {
 
   poll();
 }
+
+module.exports = { startGitPoll };

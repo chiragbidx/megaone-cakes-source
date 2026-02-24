@@ -1,24 +1,44 @@
-import { execSync } from "child_process";
-import fs from "fs";
-import "./static-server.js";
-import { startGitPoll } from "./git-poll.js";
+const { execSync } = require("child_process");
+const fs = require("fs");
+require("./static-server.js");
+const { startGitPoll } = require("./git-poll.js");
 
 const BRANCH = process.env.PREVIEW_BRANCH || "main";
 const REPO_URL = process.env.REPO_URL;
 
 process.chdir("/app"); // 🔑 FORCE cwd
 
+function run(cmd) {
+  execSync(cmd, { stdio: "inherit", cwd: "/app" });
+}
+
+if (!REPO_URL) {
+  console.error("[supervisor] REPO_URL env var is required");
+  process.exit(1);
+}
+
 console.log("[supervisor] ensuring git repo");
 
 if (!fs.existsSync(".git")) {
-  execSync("git init", { stdio: "inherit", cwd: "/app" });
-  execSync(`git remote add origin ${REPO_URL}`, { stdio: "inherit", cwd: "/app" });
-  execSync("git fetch origin --depth=1", { stdio: "inherit", cwd: "/app" });
-  execSync(`git reset --hard origin/${BRANCH}`, { stdio: "inherit", cwd: "/app" });
-  execSync("git clean -fd", { stdio: "inherit", cwd: "/app" });
+  run("git init");
 }
 
-console.log("[supervisor] static preview running");
+try {
+  run(`git remote set-url origin ${REPO_URL}`);
+} catch (e) {
+  run(`git remote add origin ${REPO_URL}`);
+}
+
+try {
+  run(`git fetch origin ${BRANCH} --depth=1`);
+  run(`git reset --hard origin/${BRANCH}`);
+  run("git clean -fd");
+} catch (err) {
+  console.error("[supervisor] failed to sync branch", err.message || err);
+  process.exit(1);
+}
+
+console.log(`[supervisor] static preview running on branch ${BRANCH}`);
 
 // 🔑 start polling ONLY after git is ready
 startGitPoll();
